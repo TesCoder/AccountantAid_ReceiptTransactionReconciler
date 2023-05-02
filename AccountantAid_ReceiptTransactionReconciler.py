@@ -5,7 +5,7 @@ import os
 
 def fileNameEditor(filename, card, vendorDict):
     
-    itemsToExclude = [".pdf", ".jpg", ".jpeg", ".z", "-", "---", "_", ".png"]
+    itemsToExclude = [".pdf", ".jpg", ".jpeg", ".z", "-", "---", ".png"]
     for item in itemsToExclude:
         filename = filename.replace(item, "")
     filename = filename.lstrip()
@@ -33,9 +33,19 @@ def fileNameEditor(filename, card, vendorDict):
                     continue
                 else:
                     vendorShorthand =  key
-        
-        # customizes date: moves year to front year-mo-dy
+
+        # cleans up file
+        date = fileNameArray[0]
         date = fileNameArray[0].replace(":", "-")
+        date = fileNameArray[0].replace("_", "-")
+
+        # remves preceedign dash r underscores by assigning position first int
+        for i in range(len(date)):
+            if date[i] != "-" or date[i] != "_":
+                pos = i
+                break
+        date = date[pos:]
+        
         # checks for single digit months wo 0 & adds 0 (4-11-23 to 04-11-23)
         if date[1] == "-":
             date = "0" + date
@@ -45,7 +55,7 @@ def fileNameEditor(filename, card, vendorDict):
             date = date[:3] + "0" + date[3:]
 
         # moves year to front
-        date = date[:5] + date[5:].replace("-22", "-2022")
+        date = date[:4] + date[4:].replace("-22", "-2022")
         date = date.replace("-2022", "")
         date = "2022-" + date
     
@@ -61,7 +71,7 @@ def fileNameEditor(filename, card, vendorDict):
                     amount = amount[0:-1]
 
         if False:
-            print("Files", date, vendorShorthand, amount, card, verStat)
+            print("Files initial:", date, vendorShorthand, amount, card, verStat)
                   
         return(date, vendorShorthand, amount, card, verStat)
 
@@ -137,7 +147,7 @@ class Compare():
 
         if (False):
             for transactions in self.transactions:
-                print("set1TransDtVndAmt", transactions)
+                print("self.transactions", transactions)
             else:
                 print("self.transactions is blank.")
 
@@ -150,6 +160,7 @@ class Compare():
         if (False):
             for set2items in receiptDtVndAmt:
                 print("receiptDtVndAmt", set2items)
+
 
 
         self.matched = set1TransDtVndAmt & receiptDtVndAmt
@@ -198,20 +209,17 @@ class Compare():
                     print("FileNotMatchedWTrans DiffNOTOnlyByDate" , item)
                     self.FileNotMatchedWTrans.add(item)
 
-        if True:
-            # for item in set1TransDtVndAmt:
-            #     print("set1TransDtVndAmt", item)
-            
-            # for item in receiptDtVndAmt:
-            #     print("receiptDtVndAmt", item)
 
-            # for item in unmatched1: # transactions exist but not files
-            #     print("unmatched1", item)
+        # displays results if True
+        if (False):     
+            for item in unmatched1: # transactions exist but not files
+                print("unmatched1", item)
 
-            # for item in unmatched2: # transactions exist but not files
-            #     print("unmatched2", item)
+        if (False):   
+            for item in unmatched2: # transactions exist but not files
+                print("unmatched2", item)
             print()
-        
+
         C.updateExcel()
         C.updateReceipts()
 
@@ -396,6 +404,11 @@ class InitialScreen():
         Step 1: Select appropriate business.
         Step 2: Be sure transaction file pathname matches (remove x).
         Step 3: Reivew ERROR reasons closely & troubleshoot. 
+        
+        Prep: Be sure transactionsn have Date, Vendor, and Amount. Remove any spece or symbols before date
+        Correct setup example: 10_21_22 HDT $153.62 2022Receipt_34_4
+
+        Unhandled Error Note: If you have space preceeding date, it will not work "___ ". Fix for future versions.
             """
         )
         I.checkBusiness()
@@ -444,6 +457,9 @@ class InitialScreen():
     def setTransactionFile(self):
             excelFile = input("Enter transaction file path: ")
             input("press <enter> to continue")
+            if ".xlsx" not in excelFile:
+                print("ERROR: No transaction file found")
+                return
             self.excelFile = excelFile
             return self.excelFile
     
@@ -546,7 +562,7 @@ class InitialScreen():
                                                 amount = amount[0:-2]
                                             elif "." in amount and amount[-1] == ".":
                                                 amount = amount[0:-1]
-
+                                            
                                             card = sheet["F"+f'{foundRow}'].value
                                             Category = sheet["G"+f'{foundRow}']
                                             Include = sheet["H"+f'{foundRow}']
