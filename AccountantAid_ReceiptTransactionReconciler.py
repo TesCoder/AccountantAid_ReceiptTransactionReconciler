@@ -210,7 +210,7 @@ class Compare():
                     self.FileNotMatchedWTrans.add(item)
 
 
-        # displays results if True
+        # displays results if True for debugging
         if (False):     
             for item in unmatched1: # transactions exist but not files
                 print("unmatched1", item)
@@ -241,30 +241,38 @@ class Compare():
             #print(sheet[cellCoordCurrCat].value.lower())
             #print("coordUnMatched", cellCoordCurrCat, cellCoordNewCat)
             try:
-                if "Exc".lower() in sheet[cellCoordInc].value.lower():
-                    #print("Exc", sheet[cellCoordInc].value, cellCoordInc)
-                    sheet[f'{cellCoordNewCat}'] = sheet[cellCoordInc].value
-                    # keep sometimes can be both, we want to use below if both
-                if "Payment".lower() in sheet[cellCoordCurrCat].value.lower():
-                    #print("Credits:", sheet[cellCoordCurrCat].value, cellCoordNewCat)
-                    sheet[f'{cellCoordNewCat}'] = "NA - PaymentORCredit"
-                if "Exc".lower() not in sheet[cellCoordInc].value.lower() and "Payment".lower() not in sheet[cellCoordCurrCat].value.lower():
-                    sheet[f'{cellCoordNewCat}'] = f"{self.BusinessName} 12) Repair - NoReceiptFound"
-                if "YES_IR_".lower() in sheet[cellCoordInc].value.lower():
-                    sheet[f'{cellCoordNewCat}'] = sheet[cellCoordCurrCat].value
+                # if verified already, cellCoordNewCat, keeps that there
+                if "verified".lower() in sheet[cellCoordNewCat].value.lower():
+                    sheet[f'{cellCoordNewCat}'] = sheet[cellCoordNewCat].value
+                else:
+                    if "Exc".lower() in sheet[cellCoordInc].value.lower():
+                        #print("Exc", sheet[cellCoordInc].value, cellCoordInc)
+                        sheet[f'{cellCoordNewCat}'] = sheet[cellCoordInc].value
+                        # keep sometimes can be both, we want to use below if both
+                    if "Payment".lower() in sheet[cellCoordCurrCat].value.lower():
+                        #print("Credits:", sheet[cellCoordCurrCat].value, cellCoordNewCat)
+                        sheet[f'{cellCoordNewCat}'] = "NA - PaymentORCredit"
+                    if "Exc".lower() not in sheet[cellCoordInc].value.lower() and "Payment".lower() not in sheet[cellCoordCurrCat].value.lower():
+                        sheet[f'{cellCoordNewCat}'] = f"{self.BusinessName} 12) Repair - NoReceiptFound"
+                    if "YES_IR_".lower() in sheet[cellCoordInc].value.lower():
+                        sheet[f'{cellCoordNewCat}'] = sheet[cellCoordCurrCat].value
             except:
                 AttributeError
         
         # when unmatched diff by date, notes in excel
         # if "exc" in cellCoordInc, assigns it to cellCoordNewCat
         for (cellCoordCurrCat, cellCoordInc, cellCoordNewCat) in self.unmatchedDiffOnlyByDateCoord:
-            # print("self.unmatchedDiffOnlyByDateCoord", cellCoordCurrCat, cellCoordInc, cellCoordNewCat)
-            if "exc" not in sheet[f'{cellCoordInc}'].value:
-                sheet[f'{cellCoordNewCat}'] = f"{self.BusinessName} 12) Repair - DiffByDateOnly"
+            # if verified already, cellCoordNewCat, keeps that there
+            if "verified".lower() in sheet[cellCoordNewCat].value.lower():
+                sheet[f'{cellCoordNewCat}'] = sheet[cellCoordNewCat].value
             else:
-                sheet[f'{cellCoordNewCat}'] = sheet[f'{cellCoordInc}'].value
+                # print("self.unmatchedDiffOnlyByDateCoord", cellCoordCurrCat, cellCoordInc, cellCoordNewCat)
+                if "exc" not in sheet[f'{cellCoordInc}'].value:
+                    sheet[f'{cellCoordNewCat}'] = f"{self.BusinessName} 12) Repair - DiffByDateOnly"
+                else:
+                    sheet[f'{cellCoordNewCat}'] = sheet[f'{cellCoordInc}'].value
 
-        # sets cellCoordNewCategory with cellCoordCurrCat if unmatched
+                # sets cellCoordNewCategory with cellCoordCurrCat if unmatched
         for rows in range(1, self.lastRow):
             try:
                 if (sheet[f'{cellCoordNewCat[0]+ str(rows)}'].value) == None:
@@ -445,7 +453,7 @@ class InitialScreen():
             os.listdir(receiptFolder)
             print("Found Receipt Folder: ", receiptFolder)
             print("\t")
-            I.sendInfo()
+            I.setUpCardFilePaths()
             # return
         except:
             print("\nERROR: ReciptFolder not found. Check folder location to to make sure names are as follows and receipts are not in folders.")
@@ -463,8 +471,8 @@ class InitialScreen():
             self.excelFile = excelFile
             return self.excelFile
     
-    # 
-    def sendInfo(self):
+    # sets up card to be used and the path of the excel and receipt folder
+    def setUpCardFilePaths(self):
         I.setVendorDict() # sets dictionary of vendors
         
         # asks user to select card type
@@ -472,10 +480,10 @@ class InitialScreen():
             resp = int(input(str(">Choose type: 0:Discover5658 1:Chase5726 2:Chase7208 3:Amex1005 4:Amex1006 5:Cash ")))
             if 0 > resp > 5:
                 print("Error: Please only enter 0 to 5")
-                I.sendInfo()
+                I.setUpCardFilePaths()
         except:
             print("Error: Please only enter 0 or 5")
-            I.sendInfo()
+            I.setUpCardFilePaths()
             ValueError
 
         card = I.setCardName(resp)
