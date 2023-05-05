@@ -11,7 +11,9 @@ def fileNameEditor(filename, card, vendorDict):
     filename = filename.lstrip()
     filename = filename.rstrip()
     fileNameArray = filename.split(" ")
+    # print("fileNameArray", fileNameArray)
 
+    # keeps previously reviewed indicators and pass them forward as verStat, new ones get ""
     indicators = ["verified", "DiffByDateOnly", "DiffNOTOnlyByDate"]
     for verStat in indicators:
         if verStat in filename:
@@ -27,6 +29,7 @@ def fileNameEditor(filename, card, vendorDict):
 
     # checks if selected Card is in fileName for reconciling
     if card in fileNameArray:
+        # print("card selected: ", card)
         if vendorShorthand not in list(vendorDict.keys()):
             for key in tuple(vendorDict.keys()):
                 if key not in vendorShorthand:
@@ -70,8 +73,8 @@ def fileNameEditor(filename, card, vendorDict):
                 if "." in amount and amount[-1] == ".":
                     amount = amount[0:-1]
 
-        if False:
-            print("Files initial:", date, vendorShorthand, amount, card, verStat)
+        if (False):
+            print("Receipts initial:", date, vendorShorthand, amount, card, verStat)
                   
         return(date, vendorShorthand, amount, card, verStat)
 
@@ -130,7 +133,7 @@ class Compare():
 
         # Transactions
         for item in self.transactions:
-            # print("self.transactions", item[0], item[1], item[2], item[4], item[5], item[6])
+            print("self.transactions a", item[0], item[1], item[2], item[4], item[5], item[6])
             #postDate, vendorShorthand, amount, card, Category, Include, newCategory
             self.set1Transactions.add((item[0], item[1], item[2], item[3], item[4], item[5], item[6]))
 
@@ -155,21 +158,30 @@ class Compare():
             for set1items in set1TransDtVndAmt:
                 print("set1TransDtVndAmt", set1items)
             else:
-                print("No transactiosn received!")
+                print("No transactions received!")
 
         if (False):
             for set2items in receiptDtVndAmt:
                 print("receiptDtVndAmt", set2items)
-
-
 
         self.matched = set1TransDtVndAmt & receiptDtVndAmt
         unmatched1 = set1TransDtVndAmt.difference(receiptDtVndAmt) # transactions exist but not files
         unmatched2 = receiptDtVndAmt.difference(set1TransDtVndAmt) # have file but not transaction
 
         if len(self.matched) == 0:
-            print("ERROR: NO RECEIPTS MATCHED. CHECK RECEIPT FOLDER: If runnning program for 2nd time, be sure receipts are in first directy of ReceiptFolder. They may have been placed in 'verified' or another folder.")
+            """
+            ERROR: NO RECEIPTS MATCHED. 
+            CHECK RECEIPT FOLDER: If runnning program for 2nd time, be sure receipts are in first directy of ReceiptFolder. They may have been placed in 'verified' or another folder.")
+            Make sure all files are formatted as follows: Date, Vendor, $, and Card
+
+            *Card must match exactly 
+            
+            """
             return
+        
+        if (False):
+            for item in self.matched:
+                print("self.matched", item)
 
         for item in self.set1Transactions:
             # get the coordinate for newCategory row of cell that matched
@@ -233,8 +245,9 @@ class Compare():
             FileNotFoundError
         
         # adds matched to excel
+        # future version - add repair/advertising/other dept/groups
         for coordMatched in self.matchednewCatCoord:
-            sheet[f'{coordMatched}'] = f"{self.BusinessName} 12) Repair - Verified"
+            sheet[f'{coordMatched}'] = f"{self.BusinessName} Verified"
         
         # adds unmatched to excel
         for (cellCoordCurrCat, cellCoordInc, cellCoordNewCat) in self.unmatchednewCatCoord:
@@ -308,8 +321,11 @@ class Compare():
             print("\n")
             print("x"*100)
             print("\n")
+
+           
+        
         else:
-            print("Please use excel file")
+            print("Please use an excel file")
 
     def updateReceipts(self):
         fileExt = [".pdf", ".jpg", ".jpeg", ".png"]
@@ -380,7 +396,7 @@ class InitialScreen():
         return str(self.BusinessName + '\t' + self.BusinessName)
 
     def setCardName(self, resp):
-        self.cardNames = ["Discover5658", "Chase5726", "Chase7208", "Amex1005", "Amex1006", "Cash"]
+        self.cardNames = ["Discover5658", "Chase5726", "Chase7208", "Amex21005", "Amex21006", "Cash"]
         self.cardNameSelected = self.cardNames[resp]
         return self.cardNameSelected
     
@@ -393,6 +409,7 @@ class InitialScreen():
                         "TLRP": ["TLRP"],
                         "CST": ["COSTCO"],
                         "EB": ["EBAY"],
+                        "ComcastXfinity": ["COMCAST"]
                         }
         return self.vendorDict
     
@@ -416,12 +433,12 @@ class InitialScreen():
         Prep: Be sure transactionsn have Date, Vendor, and Amount. Remove any spece or symbols before date
         Correct setup example: 10_21_22 HDT $153.62 2022Receipt_34_4
 
-        Unhandled Error Note: If you have space preceeding date, it will not work "___ ". Fix for future versions.
+        Unhandled Error Note: If you have space preceeding date, it will result in error. Fix planned for future versions.
             """
         )
-        I.checkBusiness()
+        I.checkDept()
             
-    def checkBusiness(self):
+    def checkDept(self):
 
         # receives input from business selection & fixes errors
         try:
@@ -432,14 +449,16 @@ class InitialScreen():
                 inp = input("press <enter> to continue")
                 I.createFolderLocation()
             elif response == 1:
-                self.BusinessName == "HMRDept"
+                self.BusinessName = "IRDept"
+                print("You have selected:", self.BusinessName)
+                inp = input("press <enter> to continue")
                 I.createFolderLocation()
             else:
                 print("Please only enter '0' or '1'")
-                I.checkBusiness()
+                I.checkDept()
         except:
             print("Please only enter '0' or '1'") # notifies user of error
-            I.checkBusiness() # when error occurs it restarts function
+            I.checkDept() # when error occurs it restarts function
             ValueError
             return
         
@@ -474,11 +493,13 @@ class InitialScreen():
     # sets up card to be used and the path of the excel and receipt folder
     def setUpCardFilePaths(self):
         I.setVendorDict() # sets dictionary of vendors
+        I.setCardName(0) # sets card names
         
         # asks user to select card type
         try:
-            resp = int(input(str(">Choose type: 0:Discover5658 1:Chase5726 2:Chase7208 3:Amex1005 4:Amex1006 5:Cash ")))
-            if 0 > resp > 5:
+            # resp = int(input(str(">Choose type: 0:Discover5658 1:Chase5726 2:Chase7208 3:Amex21005 4:Amex1006 5:Cash ")))
+            resp = int(input(str(">Choose card: 0 {}, 1 {}, 2 {}, 3 {}, 4 {}, 5 {}".format(self.cardNames[0], self.cardNames[1], self.cardNames[2], self.cardNames[3], self.cardNames[4], self.cardNames[5]))))
+            if 0 > resp > 5 or not isinstance(resp, int):
                 print("Error: Please only enter 0 to 5")
                 I.setUpCardFilePaths()
         except:
@@ -489,7 +510,7 @@ class InitialScreen():
         card = I.setCardName(resp)
         excelFile = I.setTransactionFile()
 
-        print("You have selected:", card)
+        # print("Card selected:", card)
         inp = input("press any key to continue")
 
         # extracts folder containing transactions from excelFile path
@@ -571,7 +592,7 @@ class InitialScreen():
                                             elif "." in amount and amount[-1] == ".":
                                                 amount = amount[0:-1]
                                             
-                                            card = sheet["F"+f'{foundRow}'].value
+                                            # card = sheet["F"+f'{foundRow}'].value
                                             Category = sheet["G"+f'{foundRow}']
                                             Include = sheet["H"+f'{foundRow}']
                                             newCategory = sheet["J"+f'{foundRow}']
@@ -583,8 +604,8 @@ class InitialScreen():
                                                         if item == vendor:
                                                             vendorShorthand = key
                                             
-                                            if (False):
-                                                print("Transactions", postDate, vendorShorthand, vendor, amount, card, Category, newCategory)
+                                            if (True):
+                                                print("Transactions as entered:", postDate, vendorShorthand, vendor, amount, card, Category, newCategory)
                                             transactionsSet.add((postDate, vendorShorthand, amount, card, Category, Include, newCategory))
 
                 except TypeError:
